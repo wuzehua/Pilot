@@ -416,3 +416,6 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 
+.idea
+
+imgui.ini

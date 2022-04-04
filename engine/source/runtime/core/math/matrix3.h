@@ -3,6 +3,7 @@
 #include "runtime/core/math/math.h"
 #include "runtime/core/math/quaternion.h"
 #include "runtime/core/math/vector3.h"
+#include <cstring>
 
 // NB All code adapted from Wild Magic 0.2 Matrix math (free source code)
 // http://www.geometrictools.com/
