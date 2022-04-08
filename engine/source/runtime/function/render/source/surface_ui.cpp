@@ -22,6 +22,7 @@ int SurfaceUI::initialize(SurfaceRHI* rhi, PilotRenderer* prenderer, std::shared
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.ConfigDockingAlwaysTabBar         = true;
     io.ConfigWindowsMoveFromTitleBarOnly = true;
+
     io.Fonts->AddFontFromFileTTF(
         ConfigManager::getInstance().getEditorFontPath().generic_string().data(), 16, nullptr, nullptr);
     io.Fonts->Build();

@@ -1,6 +1,6 @@
 #include "editor/include/editor_ui.h"
 
-#include "editor//include/editor.h"
+#include "editor/include/editor.h"
 
 #include "runtime/core/base/macro.h"
 #include "runtime/core/meta/reflection/reflection.h"
@@ -97,7 +97,7 @@ namespace Pilot
             if (g_node_depth == -1)
             {
                 std::string label = "##" + name;
-                ImGui::Text(name.c_str());
+                ImGui::Text("%s", name.c_str());
                 ImGui::SameLine();
                 ImGui::InputInt(label.c_str(), static_cast<int*>(value_ptr));
             }
@@ -106,7 +106,7 @@ namespace Pilot
                 if (g_editor_node_state_array[g_node_depth].second)
                 {
                     std::string full_label = "##" + getLeafUINodeParentLabel() + name;
-                    ImGui::Text((name + ":").c_str());
+                    ImGui::Text("%s", (name + ":").c_str());
                     ImGui::InputInt(full_label.c_str(), static_cast<int*>(value_ptr));
                 }
             }
@@ -115,7 +115,7 @@ namespace Pilot
             if (g_node_depth == -1)
             {
                 std::string label = "##" + name;
-                ImGui::Text(name.c_str());
+                ImGui::Text("%s", name.c_str());
                 ImGui::SameLine();
                 ImGui::InputFloat(label.c_str(), static_cast<float*>(value_ptr));
             }
@@ -124,7 +124,7 @@ namespace Pilot
                 if (g_editor_node_state_array[g_node_depth].second)
                 {
                     std::string full_label = "##" + getLeafUINodeParentLabel() + name;
-                    ImGui::Text((name + ":").c_str());
+                    ImGui::Text("%s", (name + ":").c_str());
                     ImGui::InputFloat(full_label.c_str(), static_cast<float*>(value_ptr));
                 }
             }
@@ -135,7 +135,7 @@ namespace Pilot
             if (g_node_depth == -1)
             {
                 std::string label = "##" + name;
-                ImGui::Text(name.c_str());
+                ImGui::Text("%s", name.c_str());
                 ImGui::SameLine();
                 ImGui::DragFloat3(label.c_str(), val);
             }
@@ -144,7 +144,7 @@ namespace Pilot
                 if (g_editor_node_state_array[g_node_depth].second)
                 {
                     std::string full_label = "##" + getLeafUINodeParentLabel() + name;
-                    ImGui::Text((name + ":").c_str());
+                    ImGui::Text("%s", (name + ":").c_str());
                     ImGui::DragFloat3(full_label.c_str(), val);
                 }
             }
@@ -158,7 +158,7 @@ namespace Pilot
             if (g_node_depth == -1)
             {
                 std::string label = "##" + name;
-                ImGui::Text(name.c_str());
+                ImGui::Text("%s", name.c_str());
                 ImGui::SameLine();
                 ImGui::DragFloat4(label.c_str(), val);
             }
@@ -167,7 +167,7 @@ namespace Pilot
                 if (g_editor_node_state_array[g_node_depth].second)
                 {
                     std::string full_label = "##" + getLeafUINodeParentLabel() + name;
-                    ImGui::Text((name + ":").c_str());
+                    ImGui::Text("%s", (name + ":").c_str());
                     ImGui::DragFloat4(full_label.c_str(), val);
                 }
             }
@@ -181,16 +181,16 @@ namespace Pilot
             if (g_node_depth == -1)
             {
                 std::string label = "##" + name;
-                ImGui::Text(name.c_str());
+                ImGui::Text("%s", name.c_str());
                 ImGui::SameLine();
-                ImGui::Text((*static_cast<std::string*>(value_ptr)).c_str());
+                ImGui::Text("%s", (*static_cast<std::string*>(value_ptr)).c_str());
             }
             else
             {
                 if (g_editor_node_state_array[g_node_depth].second)
                 {
                     std::string full_label = "##" + getLeafUINodeParentLabel() + name;
-                    ImGui::Text((name + ":").c_str());
+                    ImGui::Text("%s", (name + ":").c_str());
                     std::string value_str = *static_cast<std::string*>(value_ptr);
                     if (value_str.find_first_of('/') != std::string::npos)
                     {
@@ -205,7 +205,7 @@ namespace Pilot
                             value_str.clear();
                         }
                     }
-                    ImGui::Text(value_str.c_str());
+                    ImGui::Text("%s", value_str.c_str());
                 }
             }
         };
@@ -220,6 +220,11 @@ namespace Pilot
             parent_label += g_editor_node_state_array[index].first + "::";
         }
         return parent_label;
+    }
+
+    bool EditorUI::isCursorInRect(Vector2 pos, Vector2 size) const
+    {
+        return pos.x <= m_mouse_x && m_mouse_x <= pos.x + size.x && pos.y <= m_mouse_y && m_mouse_y <= pos.y + size.y;
     }
 
     GObject* EditorUI::getSelectedGObject() const
@@ -284,7 +289,7 @@ namespace Pilot
         showEditorWorldObjectsWindow(&asset_window_open);
         showEditorGameWindow(&game_engine_window_open);
         showEditorFileContentWindow(&file_content_window_open);
-        showEditorDetialWindow(&detail_window_open);
+        showEditorDetailWindow(&detail_window_open);
     }
 
     void EditorUI::showEditorMenu(bool* p_open)
@@ -490,7 +495,7 @@ namespace Pilot
         delete[] fields;
     }
 
-    void EditorUI::showEditorDetialWindow(bool* p_open)
+    void EditorUI::showEditorDetailWindow(bool* p_open)
     {
         ImGuiWindowFlags window_flags = ImGuiWindowFlags_None;
 
@@ -553,9 +558,16 @@ namespace Pilot
             ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_NoHide);
             ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed);
             ImGui::TableHeadersRow();
-            Pilot::EditorFileService editor_file_service;
-            editor_file_service.buildEngineFileTree();
-            EditorFileNode* editor_root_node = editor_file_service.getEditorRootNode();
+
+            auto current_time = std::chrono::steady_clock::now();
+            if (current_time - m_last_file_tree_update > std::chrono::seconds(1))
+            {
+                m_editor_file_service.buildEngineFileTree();
+                m_last_file_tree_update = current_time;
+            }
+            m_last_file_tree_update = current_time;
+
+            EditorFileNode* editor_root_node = m_editor_file_service.getEditorRootNode();
             buildEditorFileAssstsUITree(editor_root_node);
             ImGui::EndTable();
         }
@@ -655,16 +667,26 @@ namespace Pilot
             ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "Press Left Alt key to display the mouse cursor!");
         }
 
+        auto menu_bar_rect = ImGui::GetCurrentWindow()->MenuBarRect();
+
         Vector2 new_window_pos  = {0.0f, 0.0f};
         Vector2 new_window_size = {0.0f, 0.0f};
         new_window_pos.x        = ImGui::GetWindowPos().x;
-        new_window_pos.y        = ImGui::GetWindowPos().y + 38.0f;
+        new_window_pos.y        = ImGui::GetWindowPos().y + menu_bar_rect.Min.y;
         new_window_size.x       = ImGui::GetWindowSize().x;
-        new_window_size.y       = ImGui::GetWindowSize().y - 38.0f;
+        new_window_size.y       = ImGui::GetWindowSize().y - menu_bar_rect.Min.y;
 
         // if (new_window_pos != m_engine_window_pos || new_window_size != m_engine_window_size)
         {
+#if defined(__MACH__)
+            float dpi_scale = main_viewport->DpiScale;
+            m_editor->onWindowChanged(new_window_pos.x * dpi_scale,
+                                      new_window_pos.y * dpi_scale,
+                                      new_window_size.x * dpi_scale,
+                                      new_window_size.y * dpi_scale);
+#else
             m_editor->onWindowChanged(new_window_pos.x, new_window_pos.y, new_window_size.x, new_window_size.y);
+#endif
 
             m_engine_window_pos  = new_window_pos;
             m_engine_window_size = new_window_size;
@@ -906,8 +928,7 @@ namespace Pilot
             {
                 glfwSetInputMode(m_io->m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
-                if (m_mouse_x > m_engine_window_pos.x && m_mouse_x < (m_engine_window_pos.x + m_engine_window_size.x) &&
-                    m_mouse_y > m_engine_window_pos.y && m_mouse_y < (m_engine_window_pos.y + m_engine_window_size.y))
+                if (isCursorInRect(m_engine_window_pos, m_engine_window_size))
                 {
                     Vector2 cursor_uv = Vector2((m_mouse_x - m_engine_window_pos.x) / m_engine_window_size.x,
                                                 (m_mouse_y - m_engine_window_pos.y) / m_engine_window_size.y);
@@ -934,8 +955,7 @@ namespace Pilot
             return;
         }
         // wheel scrolled up = zoom in by 2 extra degrees
-        if (m_mouse_x > m_engine_window_pos.x && m_mouse_x < (m_engine_window_pos.x + m_engine_window_size.x) &&
-            m_mouse_y > m_engine_window_pos.y && m_mouse_y < (m_engine_window_pos.y + m_engine_window_size.y))
+        if (isCursorInRect(m_engine_window_pos, m_engine_window_size))
         {
             m_tmp_uistate->m_editor_camera->zoom((float)yoffset * 2.0f);
         }
@@ -952,8 +972,7 @@ namespace Pilot
         if (current_active_level == nullptr)
             return;
 
-        if (m_mouse_x > m_engine_window_pos.x && m_mouse_x < (m_engine_window_pos.x + m_engine_window_size.x) &&
-            m_mouse_y > m_engine_window_pos.y && m_mouse_y < (m_engine_window_pos.y + m_engine_window_size.y))
+        if (isCursorInRect(m_engine_window_pos, m_engine_window_size))
         {
             if (key == GLFW_MOUSE_BUTTON_LEFT)
             {

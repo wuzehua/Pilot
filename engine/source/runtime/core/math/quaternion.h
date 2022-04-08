@@ -86,15 +86,12 @@ namespace Pilot
         Quaternion mul(const Quaternion& rhs) const { return (*this) * rhs; }
         Quaternion operator*(const Quaternion& rhs) const;
 
-        Quaternion operator*(const float scalar) const
-        {
-            return Quaternion(w * scalar, x * scalar, y * scalar, z * scalar);
-        }
+        Quaternion operator*(float scalar) const { return Quaternion(w * scalar, x * scalar, y * scalar, z * scalar); }
 
         //// rotation of a vector by a quaternion
         Vector3 operator*(const Vector3& rhs) const;
 
-        Quaternion operator/(const float scalar) const
+        Quaternion operator/(float scalar) const
         {
             assert(scalar != 0.0f);
             return Quaternion(w / scalar, x / scalar, y / scalar, z / scalar);
@@ -128,13 +125,12 @@ namespace Pilot
         // functions of a quaternion
         float dot(const Quaternion& rkQ) const { return w * rkQ.w + x * rkQ.x + y * rkQ.y + z * rkQ.z; }
 
-        float length() const { return sqrt(w * w + x * x + y * y + z * z); }
+        float length() const { return std::sqrt(w * w + x * x + y * y + z * z); }
 
         /// Normalizes this quaternion, and returns the previous length
         void normalise(void)
         {
-            float len    = w * w + x * x + y * y + z * z;
-            float factor = 1.0f / sqrt(len);
+            float factor = 1.0f / this->length();
             *this        = *this * factor;
         }
 
