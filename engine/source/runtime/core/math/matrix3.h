@@ -3,7 +3,6 @@
 #include "runtime/core/math/math.h"
 #include "runtime/core/math/quaternion.h"
 #include "runtime/core/math/vector3.h"
-#include <cstring>
 
 #include <cstring>
 
