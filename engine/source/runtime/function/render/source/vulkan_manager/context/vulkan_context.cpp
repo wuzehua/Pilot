@@ -1,6 +1,7 @@
 #include "runtime/function/render/include/render/vulkan_manager/vulkan_context.h"
 #include "runtime/function/render/include/render/vulkan_manager/vulkan_manager.h"
 #include "runtime/function/render/include/render/vulkan_manager/vulkan_util.h"
+#include "runtime/core/base/macro.h"
 
 #include <algorithm>
 
@@ -323,7 +324,7 @@ void Pilot::PVulkanContext::initializePhysicalDevice()
         std::vector<VkPhysicalDevice> physical_devices(physical_device_count);
         vkEnumeratePhysicalDevices(_instance, &physical_device_count, physical_devices.data());
 
-        std::vector<std::pair<int, VkPhysicalDevice>> ranked_physical_devices;
+        std::vector<std::pair<int, std::pair<VkPhysicalDeviceProperties, VkPhysicalDevice>>> ranked_physical_devices;
         for (const auto& device : physical_devices)
         {
             VkPhysicalDeviceProperties physical_device_properties;
@@ -338,21 +339,23 @@ void Pilot::PVulkanContext::initializePhysicalDevice()
             {
                 score += 100;
             }
-
-            ranked_physical_devices.push_back({score, device});
+            LOG_INFO("Find GPU: " + physical_device_properties.deviceName)
+            ranked_physical_devices.push_back({score, {physical_device_properties, device}});
         }
 
         std::sort(ranked_physical_devices.begin(),
                   ranked_physical_devices.end(),
-                  [](const std::pair<int, VkPhysicalDevice>& p1, const std::pair<int, VkPhysicalDevice>& p2) {
-                      return p1 > p2;
+                  [](const std::pair<int, std::pair<VkPhysicalDeviceProperties,VkPhysicalDevice>>& p1,
+                     const std::pair<int, std::pair<VkPhysicalDeviceProperties, VkPhysicalDevice>>& p2) {
+                      return p1.first > p2.first;
                   });
 
         for (const auto& device : ranked_physical_devices)
         {
-            if (isDeviceSuitable(device.second))
+            if (isDeviceSuitable(device.second.second))
             {
-                _physical_device = device.second;
+                LOG_INFO("Pick GPU: " + device.second.first.deviceName)
+                _physical_device = device.second.second;
                 break;
             }
         }
